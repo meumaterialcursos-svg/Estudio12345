@@ -1,0 +1,25 @@
+rules_version = '2';
+
+// Cada conta só lê e grava os próprios dados: studios/{uid}/data/{documento}.
+// Qualquer outro caminho é negado.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /studios/{uid}/data/{docId} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['json', 'rev', 'by', 'updatedAt'])
+        && request.resource.data.json is string
+        && request.resource.data.json.size() < 1000000
+        && request.resource.data.rev is int;
+
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
